@@ -16,7 +16,7 @@ package main
 import (
 	"context"
 
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 type ExamplePlugin struct {

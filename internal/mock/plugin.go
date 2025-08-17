@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 // Mock plugin used only for testing.

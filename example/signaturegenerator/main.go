@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/notaryproject/notation-plugin-framework-go/cli"
+	"github.com/bartoszpietryka/notation-plugin-piv/cli"
 )
 
 func main() {

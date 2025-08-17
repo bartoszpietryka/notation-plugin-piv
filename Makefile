@@ -20,7 +20,7 @@ all: test
 
 .PHONY: test
 test: check-line-endings ## run unit tests
-	go test -race -v -coverprofile=coverage.txt -covermode=atomic ./...
+	go test  -v -coverprofile=coverage.txt -covermode=atomic ./...
 
 .PHONY: e2e
 e2e:

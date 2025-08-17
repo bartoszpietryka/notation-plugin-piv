@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/notaryproject/notation-plugin-framework-go/internal/slices"
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/slices"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 func getValidArgsString(md *plugin.GetMetadataResponse) string {

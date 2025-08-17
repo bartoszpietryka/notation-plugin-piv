@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/notaryproject/notation-plugin-framework-go/internal/mock"
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/mock"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 var cli, _ = New(mock.NewPlugin(false))

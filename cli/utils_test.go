@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 func TestGetValidArgsString(t *testing.T) {

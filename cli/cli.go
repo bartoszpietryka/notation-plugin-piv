@@ -27,9 +27,9 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/notaryproject/notation-plugin-framework-go/internal/slices"
-	"github.com/notaryproject/notation-plugin-framework-go/log"
-	"github.com/notaryproject/notation-plugin-framework-go/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/slices"
+	"github.com/bartoszpietryka/notation-plugin-piv/log"
+	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 )
 
 // CLI struct is used to create an executable for plugin.

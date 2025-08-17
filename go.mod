@@ -1,3 +1,3 @@
-module github.com/notaryproject/notation-plugin-framework-go
+module github.com/bartoszpietryka/notation-plugin-piv
 
 go 1.20
