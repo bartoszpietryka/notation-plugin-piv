@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/com.bartoszpietryka.piv.notation.plugin", "dir of package containing embedded files")
+var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/com.bp.piv.notation.plugin", "dir of package containing embedded files")
 
 func TestSuccess(t *testing.T) {
 	tests := map[string]struct {
@@ -34,15 +34,11 @@ func TestSuccess(t *testing.T) {
 		"get-plugin-metadata": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "{}",
-			expectedStdout: "{\"name\":\"com.bartoszpietryka.piv.notation.plugin\",\"description\":\"PIV Plugin for Notation\",\"version\":\"1.0.0\",\"url\":\"https://github.com/bartoszpietryka/notation-plugin-piv\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\",\"SIGNATURE_VERIFIER.TRUSTED_IDENTITY\",\"SIGNATURE_VERIFIER.REVOCATION_CHECK\"]}"},
-		"verify-signature": {
-			pluginPath:     sigGenPluginPath,
-			stdin:          "{\"contractVersion\":\"1.0\",\"signature\":{\"criticalAttributes\":{\"contentType\":\"someCT\",\"signingScheme\":\"someSigningScheme\"},\"unprocessedAttributes\":null,\"certificateChain\":[\"emFw\",\"em9w\"]},\"trustPolicy\":{\"trustedIdentities\":null,\"signatureVerification\":[\"SIGNATURE_GENERATOR.RAW\"]}}",
-			expectedStdout: "{\"verificationResults\":{\"SIGNATURE_VERIFIER.REVOCATION_CHECK\":{\"success\":true,\"reason\":\"Not revoked\"},\"SIGNATURE_VERIFIER.TRUSTED_IDENTITY\":{\"success\":true,\"reason\":\"Valid trusted Identity\"}},\"processedAttributes\":[]}"},
+			expectedStdout: "{\"name\":\"com.bp.piv.notation.plugin\",\"description\":\"PIV Plugin for Notation\",\"version\":\"1.0.0\",\"url\":\"https://github.com/bartoszpietryka/notation-plugin-piv\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\"]}"},
 		"version": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "",
-			expectedStdout: "com.bartoszpietryka.piv.notation.plugin - PIV Plugin for Notation\nVersion: 1.0.0\n",
+			expectedStdout: "com.bp.piv.notation.plugin - PIV Plugin for Notation\nVersion: 1.0.0\n",
 		},
 		"generate-signature": {
 			pluginPath:     sigGenPluginPath,
@@ -63,7 +59,7 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestFailure(t *testing.T) {
-	cmds := []string{"verify-signature", "get-plugin-metadata"}
+	cmds := []string{"get-plugin-metadata"}
 	stdInputs := []string{"", "\n", "invalidjson", "🍺 ¢ §"}
 	expectedValidationErr := "{\"errorCode\":\"VALIDATION_ERROR\",\"errorMessage\":\"Input is not a valid JSON\"}"
 	for _, cmd := range cmds {

@@ -15,8 +15,6 @@
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: all
-all: test
 
 .PHONY: test
 test: check-line-endings ## run unit tests
@@ -25,6 +23,10 @@ test: check-line-endings ## run unit tests
 .PHONY: e2e
 e2e:
 	cd ./test/e2e && ./run.sh;
+
+.PHONY: build
+build: test
+	go build -o ./build/bin/com.bp.piv.notation.plugin ./PIV/signaturegenerator
 
 .PHONY: clean
 clean:

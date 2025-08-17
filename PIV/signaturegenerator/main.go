@@ -1,4 +1,4 @@
-// Copyright The Notary Project Authors.
+// Copyright Bartosz Pietryka.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import (
 func main() {
 	ctx := context.Background()
 	// Initialize plugin
-	plugin, err := NewExamplePlugin()
+	plugin, err := NewPIVPlugin()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to initialize plugin: %v\n", err)
 		os.Exit(2)
