@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/com.example.plugin", "dir of package containing embedded files")
+var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/com.bartoszpietryka.piv.notation.plugin", "dir of package containing embedded files")
 
 func TestSuccess(t *testing.T) {
 	tests := map[string]struct {
@@ -34,7 +34,7 @@ func TestSuccess(t *testing.T) {
 		"get-plugin-metadata": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "{}",
-			expectedStdout: "{\"name\":\"com.example.plugin\",\"description\":\"This is an description of example plugin\",\"version\":\"1.0.0\",\"url\":\"https://example.com/notation/plugin\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\",\"SIGNATURE_VERIFIER.TRUSTED_IDENTITY\",\"SIGNATURE_VERIFIER.REVOCATION_CHECK\"]}"},
+			expectedStdout: "{\"name\":\"com.bartoszpietryka.piv.notation.plugin\",\"description\":\"PIV Plugin for Notation\",\"version\":\"1.0.0\",\"url\":\"https://github.com/bartoszpietryka/notation-plugin-piv\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\",\"SIGNATURE_VERIFIER.TRUSTED_IDENTITY\",\"SIGNATURE_VERIFIER.REVOCATION_CHECK\"]}"},
 		"verify-signature": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "{\"contractVersion\":\"1.0\",\"signature\":{\"criticalAttributes\":{\"contentType\":\"someCT\",\"signingScheme\":\"someSigningScheme\"},\"unprocessedAttributes\":null,\"certificateChain\":[\"emFw\",\"em9w\"]},\"trustPolicy\":{\"trustedIdentities\":null,\"signatureVerification\":[\"SIGNATURE_GENERATOR.RAW\"]}}",
@@ -42,7 +42,7 @@ func TestSuccess(t *testing.T) {
 		"version": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "",
-			expectedStdout: "com.example.plugin - This is an description of example plugin\nVersion: 1.0.0\n",
+			expectedStdout: "com.bartoszpietryka.piv.notation.plugin - PIV Plugin for Notation\nVersion: 1.0.0\n",
 		},
 		"generate-signature": {
 			pluginPath:     sigGenPluginPath,

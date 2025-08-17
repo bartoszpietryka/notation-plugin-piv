@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# build example plugins for e2e tests
-echo "building example plugins..."
+# build PIV plugin for e2e tests
+echo "building plugin..."
 echo "=============================="
 CWD=$(pwd)
-PLUGIN_NAME=com.example.plugin
+PLUGIN_NAME=com.bartoszpietryka.piv.notation.plugin
 plugin_directories=(  signaturegenerator )
 for plugin_directory in "${plugin_directories[@]}"
 do
-  (cd "../../example/${plugin_directory}" && go build -o "$CWD/bin/${plugin_directory}/$PLUGIN_NAME" . && echo "e2e ${plugin_directory} plugin built")
+  (cd "../../PIV/${plugin_directory}" && go build -o "$CWD/bin/${plugin_directory}/$PLUGIN_NAME" . && echo "e2e ${plugin_directory} plugin built")
 done
 
 # run e2e tests
