@@ -18,3 +18,4 @@
 bin/
 vendor/
 test/e2e/bin/
+coverage.txt

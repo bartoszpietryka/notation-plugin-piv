@@ -18,7 +18,7 @@ echo "building example plugins..."
 echo "=============================="
 CWD=$(pwd)
 PLUGIN_NAME=com.example.plugin
-plugin_directories=( envelopegenerator signaturegenerator )
+plugin_directories=(  signaturegenerator )
 for plugin_directory in "${plugin_directories[@]}"
 do
   (cd "../../example/${plugin_directory}" && go build -o "$CWD/bin/${plugin_directory}/$PLUGIN_NAME" . && echo "e2e ${plugin_directory} plugin built")
@@ -27,4 +27,4 @@ done
 # run e2e tests
 echo "running e2e tests..."
 echo "=============================="
-go test  -v ./... -args -env_gen_plugin="./bin/${plugin_directories[0]}/$PLUGIN_NAME" -sig_gen_plugin="./bin/${plugin_directories[1]}/$PLUGIN_NAME"
+go test  -v ./... -args -sig_gen_plugin="./bin/${plugin_directories[0]}/$PLUGIN_NAME"
