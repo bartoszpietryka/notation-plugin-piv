@@ -1,31 +1,9 @@
-# notation-plugin-framework-go
+# notation-plugin-piv
+WORK IN PROGRESS 
+Do not use yet
 
-[![Build Status](https://github.com/notaryproject/notation-plugin-framework-go/actions/workflows/build.yml/badge.svg?event=push&branch=main)](https://github.com/notaryproject/notation-plugin-framework-go/actions/workflows/build.yml?query=workflow%3Abuild+event%3Apush+branch%3Amain)
-[![Codecov](https://codecov.io/gh/notaryproject/notation-plugin-framework-go/branch/main/graph/badge.svg)](https://codecov.io/gh/notaryproject/notation-plugin-framework-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/notaryproject/notation-plugin-framework-go.svg)](https://pkg.go.dev/github.com/notaryproject/notation-plugin-framework-go@main)
+[Notation](https://github.com/notaryproject/notation) [plugin](https://github.com/notaryproject/specifications/blob/main/specs/plugin-extensibility.md) that allows to sign artifacts with [PIV](https://docs.yubico.com/yesdk/users-manual/application-piv/piv-overview.html) compatible HSM devices. Like Yubikey or SmartCard  
 
-notation-plugin-framework-go contains framework or library required to create notation plugins as per [Notary Project specifications](https://github.com/notaryproject/specifications).
-
-Please visit [README](https://github.com/notaryproject/.github/blob/main/README.md) to know more about Notary Project.
-
-> [!NOTE]
-> The Notary Project documentation is available [here](https://notaryproject.dev/docs/).
-
-## Table of Contents
-
-- [Documentation](#documentation)
-- [Example Plugins](#example-plugins)
-- [Code of Conduct](#code-of-conduct)
-- [License](#license)
-
-## Documentation
-
-Library documentation is available at [Go Reference](https://pkg.go.dev/github.com/notaryproject/notation-plugin-framework-go).
-
-## Example Plugins
-
-- [Signature generator](example/signaturegenerator/)
-- [Envelope generator](example/envelopegenerator/)
 
 ## Code of Conduct
 
