@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifeq ($(OS), Windows_NT)
+	extension=.exe
+else
+	extension=
+endif
+
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
@@ -24,10 +30,13 @@ test: check-line-endings ## run unit tests
 e2e:
 	cd ./test/e2e && ./run.sh;
 
-.PHONY: build
-build: test
-	go build -o ./build/bin/com.bp.piv.notation.plugin ./PIV/signaturegenerator
+.PHONY: gobuild
+gobuild: 
+	go build -o ./build/bin/pl.bpietryka.piv.notation.plugin$(extension) ./PIV/signaturegenerator
 
+.PHONY: build
+build: test gobuild
+	
 .PHONY: clean
 clean:
 	git status --ignored --short | grep '^!! ' | sed 's/!! //' | xargs rm -rf

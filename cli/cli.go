@@ -60,7 +60,7 @@ func NewWithLogger(pl plugin.Plugin, l log.Logger) (*CLI, error) {
 func (c *CLI) Execute(ctx context.Context, args []string) {
 	c.validateArgs(ctx, args)
 
-	rescueStdOut := deferStdout()
+	//rescueStdOut := deferStdout()
 	command := args[1]
 	var resp any
 	var err error
@@ -101,17 +101,17 @@ func (c *CLI) Execute(ctx context.Context, args []string) {
 			resp, err = c.pl.GenerateSignature(ctx, &request)
 		}
 	case plugin.Version:
-		rescueStdOut()
+		//		rescueStdOut()
 		c.printVersion(ctx)
 		return
 	default:
 		// should never happen
-		rescueStdOut()
+		//		rescueStdOut()
 		deliverError(plugin.NewGenericError("something went wrong").Error())
 	}
 
 	op, pluginErr := c.marshalResponse(resp, err)
-	rescueStdOut()
+	//	rescueStdOut()
 	if pluginErr != nil {
 		deliverError(pluginErr.Error())
 	}

@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/com.bp.piv.notation.plugin", "dir of package containing embedded files")
+var sigGenPluginPath = flag.String("sig_gen_plugin", "./bin/signaturegenerator/pl.bpietryka.piv.notation.plugin", "dir of package containing embedded files")
 
 func TestSuccess(t *testing.T) {
 	tests := map[string]struct {
@@ -34,11 +34,11 @@ func TestSuccess(t *testing.T) {
 		"get-plugin-metadata": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "{}",
-			expectedStdout: "{\"name\":\"com.bp.piv.notation.plugin\",\"description\":\"PIV Plugin for Notation\",\"version\":\"1.0.0\",\"url\":\"https://github.com/bartoszpietryka/notation-plugin-piv\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\"]}"},
+			expectedStdout: "{\"name\":\"pl.bpietryka.piv.notation.plugin\",\"description\":\"PIV Plugin for Notation\",\"version\":\"1.0.0\",\"url\":\"https://github.com/bartoszpietryka/notation-plugin-piv\",\"supportedContractVersions\":[\"1.0\"],\"capabilities\":[\"SIGNATURE_GENERATOR.RAW\"]}"},
 		"version": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "",
-			expectedStdout: "com.bp.piv.notation.plugin - PIV Plugin for Notation\nVersion: 1.0.0\n",
+			expectedStdout: "pl.bpietryka.piv.notation.plugin - PIV Plugin for Notation\nVersion: 1.0.0\n",
 		},
 		"generate-signature": {
 			pluginPath:     sigGenPluginPath,

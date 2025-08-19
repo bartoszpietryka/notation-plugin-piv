@@ -17,7 +17,7 @@
 echo "building plugin..."
 echo "=============================="
 CWD=$(pwd)
-PLUGIN_NAME=com.bp.piv.notation.plugin
+PLUGIN_NAME=pl.bpietryka.piv.notation.plugin
 plugin_directories=(  signaturegenerator )
 for plugin_directory in "${plugin_directories[@]}"
 do
