@@ -146,7 +146,7 @@ func TestExecuteSuccess(t *testing.T) {
 		},
 		string(plugin.CommandGenerateSignature): {
 			c:  sigGenCli,
-			in: "{\"contractVersion\":\"1.0\",\"keyId\":\"someKeyId\",\"keySpec\":\"EC-384\",\"hashAlgorithm\":\"SHA-384\",\"payload\":\"em9w\"}",
+			in: "{\"contractVersion\":\"1.0\",\"keyId\":\"someKeyId\",\"keySpec\":\"RSA-2048\",\"hashAlgorithm\":\"SHA-256\",\"payload\":\"em9w\"}",
 			op: "{\"keyId\":\"someKeyId\",\"signature\":\"YWJjZA==\",\"signingAlgorithm\":\"RSASSA-PSS-SHA-256\",\"certificateChain\":[\"YWJjZA==\",\"d3h5eg==\"]}",
 		},
 		string(plugin.CommandDescribeKey): {

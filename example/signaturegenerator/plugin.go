@@ -37,7 +37,7 @@ func (p *ExamplePlugin) GenerateSignature(_ context.Context, req *plugin.Generat
 	return &plugin.GenerateSignatureResponse{
 		KeyID:            req.KeyID,
 		Signature:        []byte("generatedMockSignature"),
-		SigningAlgorithm: plugin.SignatureAlgorithmRSASSA_PSS_SHA384,
+		SigningAlgorithm: plugin.SignatureAlgorithmRSASSA_PSS_SHA256,
 		CertificateChain: [][]byte{[]byte("mockCert1"), []byte("mockCert2")},
 	}, nil
 }

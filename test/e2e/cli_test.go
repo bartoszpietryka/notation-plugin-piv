@@ -42,13 +42,13 @@ func TestSuccess(t *testing.T) {
 		},
 		"generate-signature": {
 			pluginPath:     sigGenPluginPath,
-			stdin:          "{\"contractVersion\":\"1.0\",\"keyId\":\"someKeyId\",\"keySpec\":\"EC-384\",\"hashAlgorithm\":\"SHA-384\",\"payload\":\"em9w\"}",
-			expectedStdout: "{\"keyId\":\"someKeyId\",\"signature\":\"Z2VuZXJhdGVkTW9ja1NpZ25hdHVyZQ==\",\"signingAlgorithm\":\"RSASSA-PSS-SHA-384\",\"certificateChain\":[\"bW9ja0NlcnQx\",\"bW9ja0NlcnQy\"]}",
+			stdin:          "{\"contractVersion\":\"1.0\",\"keyId\":\"someKeyId\",\"keySpec\":\"RSA-2048\",\"hashAlgorithm\":\"SHA-256\",\"payload\":\"em9w\"}",
+			expectedStdout: "{\"keyId\":\"someKeyId\",\"signature\":\"Z2VuZXJhdGVkTW9ja1NpZ25hdHVyZQ==\",\"signingAlgorithm\":\"RSASSA-PSS-SHA-256\",\"certificateChain\":[\"bW9ja0NlcnQx\",\"bW9ja0NlcnQy\"]}",
 		},
 		"describe-key": {
 			pluginPath:     sigGenPluginPath,
 			stdin:          "{\"contractVersion\":\"1.0\",\"keyId\":\"someKeyId\"}",
-			expectedStdout: "{\"keyId\":\"someKeyId\",\"keySpec\":\"RSA-3072\"}",
+			expectedStdout: "{\"keyId\":\"someKeyId\",\"keySpec\":\"RSA-2048\"}",
 		},
 	}
 	for name, test := range tests {

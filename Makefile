@@ -32,7 +32,7 @@ e2e:
 
 .PHONY: gobuild
 gobuild: 
-	go build -o ./build/bin/pl.bpietryka.piv.notation.plugin$(extension) ./PIV/signaturegenerator
+	go build -o ./build/bin/notation-pl.bpietryka.piv.notation.plugin$(extension) ./PIV/signaturegenerator
 
 .PHONY: build
 build: test gobuild
