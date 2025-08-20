@@ -35,7 +35,7 @@ func TestDebugLogger(t *testing.T) {
 		userConfigDir = func() (string, error) {
 			return tempDir, nil
 		}
-		logFilePath := filepath.Join(tempDir, "notation-aws-signer", "plugin.log")
+		logFilePath := filepath.Join(tempDir, "notation-piv-plugin", "plugin.log")
 		GetLogger(context.TODO()).Debug("This is a Debug log!")
 		_, err := os.ReadFile(logFilePath)
 		if err == nil {
@@ -111,7 +111,7 @@ func setupTestLogger(t *testing.T) (*debugLogger, string) {
 	userConfigDir = func() (string, error) {
 		return os.TempDir(), nil
 	}
-	expectedLogFilePath := filepath.Join(os.TempDir(), "notation-aws-signer", "plugin.log")
+	expectedLogFilePath := filepath.Join(os.TempDir(), "notation-piv-plugin", "plugin.log")
 	logger, _ := New()
 	t.Cleanup(func() {
 		logger.Close()
