@@ -1,3 +1,5 @@
+github.com/go-piv/piv-go/v2 v2.4.0 h1:xamQ/fR4MJiw/Ndbk6yi7MVwhjrwlnDAPuaH9zcGb+I=
+github.com/go-piv/piv-go/v2 v2.4.0/go.mod h1:ShZi74nnrWNQEdWzRUd/3cSig3uNOcEZp+EWl0oewnI=
 github.com/golang-jwt/jwt v3.2.2+incompatible h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=
 github.com/golang-jwt/jwt v3.2.2+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
 github.com/notaryproject/notation-core-go v1.3.0 h1:mWJaw1QBpBxpjLSiKOjzbZvB+xh2Abzk14FHWQ+9Kfs=

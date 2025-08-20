@@ -16,10 +16,16 @@ package main
 import (
 	"context"
 	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
+	"reflect"
 
 	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/golang-jwt/jwt"
 	"github.com/notaryproject/notation-core-go/signature"
 	x509core "github.com/notaryproject/notation-core-go/x509"
@@ -78,14 +84,15 @@ func sign(payload string, privateKey crypto.PrivateKey, algorithm signature.Algo
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("ss1")
 	// use JWT package to sign raw signature.
 	method := jwt.GetSigningMethod(jwtAlg)
+	fmt.Println("ss2")
 	sig, err := method.Sign(payload, privateKey)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("ss3")
 	return base64.RawURLEncoding.DecodeString(sig)
 }
 
@@ -108,15 +115,169 @@ func toRawCerts(certs []*x509.Certificate) [][]byte {
 	return rawCerts
 }
 
+func GetPIVDeviceName() (string, error) {
+	pivDevicesNames, err := piv.Cards()
+
+	if err != nil {
+		return "", plugin.NewGenericError("Unable to open PIV devices interface" + err.Error())
+	}
+
+	if len(pivDevicesNames) == 0 {
+		return "", plugin.NewGenericError("No PIV devices found")
+	}
+
+	if len(pivDevicesNames) > 1 {
+		return "", plugin.NewGenericError("Multiple PIV devices found")
+	}
+
+	return pivDevicesNames[0], nil
+}
+
+func GetPublicCertFromPIVDevice(pivDevice *piv.YubiKey) (*x509.Certificate, error) {
+
+	cert, err := pivDevice.Certificate(piv.SlotSignature)
+	if err != nil {
+		return nil, plugin.NewGenericError("Unable to get Public Certificate from PIV Device slot 9c. " + err.Error())
+	}
+	return cert, nil
+}
+
+func GetPrivateKeyInterfaceFromPIVDevice() (crypto.PrivateKey, error) {
+	fmt.Println("bb1")
+	pivDeviceName, err := GetPIVDeviceName()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(pivDeviceName)
+
+	pivDevice, err := piv.Open(pivDeviceName)
+	if err != nil {
+		return nil, plugin.NewGenericError("Unable to use PIV device. " + err.Error())
+	}
+	fmt.Println("bb3")
+
+	publicCertificate, err := GetPublicCertFromPIVDevice(pivDevice)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(publicCertificate.PublicKey)
+	fmt.Println("bb4")
+	pubKey := publicCertificate.PublicKey
+	pub, ok2 := pubKey.(*rsa.PublicKey)
+	if !ok2 {
+		fmt.Println("public key is not an rsa key")
+	}
+	fmt.Println(pub)
+	fmt.Println("bb44")
+	auth := piv.KeyAuth{PIN: "234567"}
+	privateKey, err := pivDevice.PrivateKey(piv.SlotSignature, publicCertificate.PublicKey, auth)
+	if err != nil {
+		return nil, plugin.NewGenericError("Unable to use PIV device private key. " + err.Error())
+	}
+	fmt.Println("bb5")
+	_, ok := privateKey.(crypto.Signer)
+	if !ok {
+		plugin.NewGenericError("Private key didn't implement crypto.Signer")
+	}
+
+	fmt.Println("bb10")
+	return privateKey, nil
+}
+
 func (p *PIVPlugin) GenerateSignature(_ context.Context, req *plugin.GenerateSignatureRequest) (*plugin.GenerateSignatureResponse, error) {
 	certs, err := x509core.ReadCertificateFile("./test/example_certs/code_signing.crt")
 	check(err)
-	fmt.Println("bb")
+	fmt.Println("start")
+
+	var privateKeyInterface crypto.PrivateKey
+	privateKeyInterface, err = GetPrivateKeyInterfaceFromPIVDevice()
+	fmt.Println("PIv device")
+
+	check(err)
+	data := sha512.Sum384([]byte(req.Payload))
+	rawsignaturepiv, err := privateKeyInterface.(crypto.Signer).Sign(rand.Reader, data[:], crypto.SHA384)
+
+	fmt.Println("sign with PIV")
+	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturepiv))
+	check(err)
 
 	privateKey, err := x509core.ReadPrivateKeyFile("./test/example_certs/code_signing.key")
+	fmt.Println("Read private key from file")
+	check(err)
+
+	rawsignaturefile, err := privateKey.(crypto.Signer).Sign(rand.Reader, data[:], crypto.SHA384)
+
+	fmt.Println("sign with file")
+	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturefile))
 	check(err)
 
 	rawsignature, err := sign(string(req.Payload), privateKey, signature.AlgorithmPS384)
+	fmt.Println("sign with JWT")
+	fmt.Println(base64.StdEncoding.EncodeToString(rawsignature))
+	fmt.Println("sign with JWT out")
+	check(err)
+
+	//rawsignaturePivJWT, err := sign(string(req.Payload), privateKeyInterface, signature.AlgorithmPS384)
+	//fmt.Println("sign with JWT Piv")
+	//fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturePivJWT))
+	//fmt.Println("sign with JWT out Piv")
+
+	if _, ok := privateKey.(*rsa.PrivateKey); !ok {
+		fmt.Println(fmt.Errorf("invalid key type: %s", reflect.TypeOf(privateKey)))
+	}
+
+	var Options rsa.PSSOptions
+	Options.SaltLength = rsa.PSSSaltLengthEqualsHash
+
+	rawsignaturePSS, err := rsa.SignPSS(rand.Reader, privateKey.(*rsa.PrivateKey), crypto.SHA384, data[:], &Options)
+	fmt.Println("sign with JWT PSS")
+	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturePSS))
+	fmt.Println("sign with JWT out PSS")
+	check(err)
+
+	fmt.Println("verify with PSS")
+
+	var VerifyOptions rsa.PSSOptions
+	VerifyOptions.SaltLength = rsa.PSSSaltLengthAuto
+	// Read the public key file
+	publicKeyBytes, err := os.ReadFile("./test/example_certs/code_signing.pub")
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to load public key: %s", err))
+	}
+
+	// Decode the public key into a "block"
+	publicBlock, _ := pem.Decode(publicKeyBytes)
+	if publicBlock == nil || publicBlock.Type != "PUBLIC KEY" {
+		fmt.Println(fmt.Errorf("failed to decode PEM block containing public key"))
+	}
+
+	// Parse the public key
+	publicKey, err := x509.ParsePKIXPublicKey(publicBlock.Bytes)
+	if err != nil {
+		fmt.Println(fmt.Errorf("parse cert: %s", err))
+	}
+
+	// Check the type of the key
+	if _, ok := publicKey.(*rsa.PublicKey); !ok {
+		fmt.Println(fmt.Errorf("invalid key type: %s", reflect.TypeOf(publicKey)))
+	}
+
+	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), crypto.SHA384, data[:], rawsignaturePSS, &VerifyOptions)
+	if err != nil {
+		fmt.Println(fmt.Errorf("invalid signature: %s", err))
+	} else {
+		fmt.Printf("Signature valid!\n")
+	}
+	check(err)
+
+	fmt.Println("verify with JWT PSS ")
+	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), crypto.SHA384, data[:], rawsignature, &VerifyOptions)
+	if err != nil {
+		fmt.Println(fmt.Errorf("invalid signature: %s", err))
+	} else {
+		fmt.Printf("Signature valid!\n")
+	}
+	check(err)
 
 	return &plugin.GenerateSignatureResponse{
 		KeyID:            req.KeyID,
