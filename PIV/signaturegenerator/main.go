@@ -19,7 +19,10 @@ import (
 	"os"
 
 	"github.com/bartoszpietryka/notation-plugin-piv/cli"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/logger"
 )
+
+const debugFlag = "PIV_SIGNER_NOTATION_PLUGIN_DEBUG"
 
 func main() {
 	ctx := context.Background()
@@ -31,7 +34,18 @@ func main() {
 	}
 
 	// Create executable
-	pluginCli, err := cli.New(plugin)
+	var pluginCli *cli.CLI
+	if os.Getenv(debugFlag) == "true" {
+		log, logErr := logger.New()
+		if logErr != nil {
+			os.Exit(100)
+		}
+		defer log.Close()
+		ctx = log.UpdateContext(ctx)
+		pluginCli, err = cli.NewWithLogger(plugin, log)
+	} else {
+		pluginCli, err = cli.New(plugin)
+	}
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create executable: %v\n", err)
 		os.Exit(3)

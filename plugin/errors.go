@@ -68,6 +68,14 @@ func NewValidationErrorf(format string, msg ...any) *Error {
 	return NewError(ErrorCodeValidation, fmt.Sprintf(format, msg...))
 }
 
+func NewAccessDeniedError(msg string) *Error {
+	return NewError(ErrorCodeAccessDenied, msg)
+}
+
+func NewAccessDeniedErrorf(format string, msg ...any) *Error {
+	return NewError(ErrorCodeAccessDenied, fmt.Sprintf(format, msg...))
+}
+
 func NewUnsupportedContractVersionError(version string) *Error {
 	return NewError(ErrorCodeUnsupportedContractVersion, fmt.Sprintf("%q is not a supported notary plugin contract version", version))
 }

@@ -25,6 +25,7 @@ import (
 	"reflect"
 
 	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/logger"
 	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/golang-jwt/jwt"
 	"github.com/notaryproject/notation-core-go/signature"
@@ -84,15 +85,12 @@ func sign(payload string, privateKey crypto.PrivateKey, algorithm signature.Algo
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("ss1")
 	// use JWT package to sign raw signature.
 	method := jwt.GetSigningMethod(jwtAlg)
-	fmt.Println("ss2")
 	sig, err := method.Sign(payload, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("ss3")
 	return base64.RawURLEncoding.DecodeString(sig)
 }
 
@@ -119,11 +117,11 @@ func GetPIVDeviceName() (string, error) {
 	pivDevicesNames, err := piv.Cards()
 
 	if err != nil {
-		return "", plugin.NewGenericError("Unable to open PIV devices interface" + err.Error())
+		return "", plugin.NewAccessDeniedError("Unable to open PIV devices interface" + err.Error())
 	}
 
 	if len(pivDevicesNames) == 0 {
-		return "", plugin.NewGenericError("No PIV devices found")
+		return "", plugin.NewAccessDeniedError("No PIV devices found")
 	}
 
 	if len(pivDevicesNames) > 1 {
@@ -142,79 +140,85 @@ func GetPublicCertFromPIVDevice(pivDevice *piv.YubiKey) (*x509.Certificate, erro
 	return cert, nil
 }
 
-func GetPrivateKeyInterfaceFromPIVDevice() (crypto.PrivateKey, error) {
-	fmt.Println("bb1")
+func GetPrivateKeyInterfaceFromPIVDevice(ctx context.Context ) (crypto.PrivateKey, error) {
+	log := logger.GetLogger(ctx)
+	log.Debug("Try to get first PIV device name")
 	pivDeviceName, err := GetPIVDeviceName()
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(pivDeviceName)
+	log.Debugf("PIV device name: %s", pivDeviceName )
 
+	log.Debug("Try to open device with PIV interface")
 	pivDevice, err := piv.Open(pivDeviceName)
 	if err != nil {
-		return nil, plugin.NewGenericError("Unable to use PIV device. " + err.Error())
+		return nil, plugin.NewAccessDeniedError("Unable to use PIV device. " + err.Error())
 	}
-	fmt.Println("bb3")
+	log.Debug("Sucessfuly open PIV device")
 
+	log.Debug("Extract public certificate from slot 9c")
 	publicCertificate, err := GetPublicCertFromPIVDevice(pivDevice)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(publicCertificate.PublicKey)
-	fmt.Println("bb4")
+	log.Debug("Public cert Subject: %s ; Keyusage: %s ; SerialNumber: %i", publicCertificate.Subject, publicCertificate.ExtKeyUsage,publicCertificate.SerialNumber)
+	log.Debug("Public cert Subject: %s ", publicCertificate.ExtKeyUsage)
+
 	pubKey := publicCertificate.PublicKey
-	pub, ok2 := pubKey.(*rsa.PublicKey)
-	if !ok2 {
-		fmt.Println("public key is not an rsa key")
+	_, isRSAKey := pubKey.(*rsa.PublicKey)
+	if !isRSAKey {
+		plugin.NewGenericError("Public key is not an rsa key. Only RSA keys are supported by this plugin")
 	}
-	fmt.Println(pub)
-	fmt.Println("bb44")
+//ToDo
 	auth := piv.KeyAuth{PIN: "234567"}
+	log.Debug("Create signer from slot 9c")
 	privateKey, err := pivDevice.PrivateKey(piv.SlotSignature, publicCertificate.PublicKey, auth)
 	if err != nil {
-		return nil, plugin.NewGenericError("Unable to use PIV device private key. " + err.Error())
-	}
-	fmt.Println("bb5")
-	_, ok := privateKey.(crypto.Signer)
-	if !ok {
-		plugin.NewGenericError("Private key didn't implement crypto.Signer")
+		return nil, plugin.NewAccessDeniedError("Unable to use PIV device private key. " + err.Error())
 	}
 
-	fmt.Println("bb10")
+	_, ok := privateKey.(crypto.Signer)
+	if !ok {
+		plugin.NewAccessDeniedError("Private key don't implement crypto.Signer")
+	}
+
+	log.Debug("Good signer from slot 9c")
 	return privateKey, nil
 }
 
-func (p *PIVPlugin) GenerateSignature(_ context.Context, req *plugin.GenerateSignatureRequest) (*plugin.GenerateSignatureResponse, error) {
+func (p *PIVPlugin) GenerateSignature(ctx context.Context, req *plugin.GenerateSignatureRequest) (*plugin.GenerateSignatureResponse, error) {
 	certs, err := x509core.ReadCertificateFile("./test/example_certs/code_signing.crt")
 	check(err)
-	fmt.Println("start")
+	log := logger.GetLogger(ctx)
+	log.Debug("GenerateSignature for Request:")
+	log.Debug(req)
 
 	var privateKeyInterface crypto.PrivateKey
-	privateKeyInterface, err = GetPrivateKeyInterfaceFromPIVDevice()
-	fmt.Println("PIv device")
+	privateKeyInterface, err = GetPrivateKeyInterfaceFromPIVDevice(ctx)
+	log.Debug("PIV device ready to use")
 
 	check(err)
 	data := sha512.Sum384([]byte(req.Payload))
 	rawsignaturepiv, err := privateKeyInterface.(crypto.Signer).Sign(rand.Reader, data[:], crypto.SHA384)
 
-	fmt.Println("sign with PIV")
-	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturepiv))
+	log.Debug("sign with PIV")
+	log.Debug(base64.StdEncoding.EncodeToString(rawsignaturepiv))
 	check(err)
 
 	privateKey, err := x509core.ReadPrivateKeyFile("./test/example_certs/code_signing.key")
-	fmt.Println("Read private key from file")
+	log.Debug("Read private key from file")
 	check(err)
 
 	rawsignaturefile, err := privateKey.(crypto.Signer).Sign(rand.Reader, data[:], crypto.SHA384)
 
-	fmt.Println("sign with file")
-	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturefile))
+	log.Debug("sign with file")
+	log.Debug(base64.StdEncoding.EncodeToString(rawsignaturefile))
 	check(err)
 
 	rawsignature, err := sign(string(req.Payload), privateKey, signature.AlgorithmPS384)
-	fmt.Println("sign with JWT")
-	fmt.Println(base64.StdEncoding.EncodeToString(rawsignature))
-	fmt.Println("sign with JWT out")
+	log.Debug("sign with JWT")
+	log.Debug(base64.StdEncoding.EncodeToString(rawsignature))
+	log.Debug("sign with JWT out")
 	check(err)
 
 	//rawsignaturePivJWT, err := sign(string(req.Payload), privateKeyInterface, signature.AlgorithmPS384)
@@ -223,59 +227,59 @@ func (p *PIVPlugin) GenerateSignature(_ context.Context, req *plugin.GenerateSig
 	//fmt.Println("sign with JWT out Piv")
 
 	if _, ok := privateKey.(*rsa.PrivateKey); !ok {
-		fmt.Println(fmt.Errorf("invalid key type: %s", reflect.TypeOf(privateKey)))
+		log.Debug(fmt.Errorf("invalid key type: %s", reflect.TypeOf(privateKey)))
 	}
 
 	var Options rsa.PSSOptions
 	Options.SaltLength = rsa.PSSSaltLengthEqualsHash
 
 	rawsignaturePSS, err := rsa.SignPSS(rand.Reader, privateKey.(*rsa.PrivateKey), crypto.SHA384, data[:], &Options)
-	fmt.Println("sign with JWT PSS")
-	fmt.Println(base64.StdEncoding.EncodeToString(rawsignaturePSS))
-	fmt.Println("sign with JWT out PSS")
+	log.Debug("sign with JWT PSS")
+	log.Debug(base64.StdEncoding.EncodeToString(rawsignaturePSS))
+	log.Debug("sign with JWT out PSS")
 	check(err)
 
-	fmt.Println("verify with PSS")
+	log.Debug("verify with PSS")
 
 	var VerifyOptions rsa.PSSOptions
 	VerifyOptions.SaltLength = rsa.PSSSaltLengthAuto
 	// Read the public key file
 	publicKeyBytes, err := os.ReadFile("./test/example_certs/code_signing.pub")
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to load public key: %s", err))
+		log.Debug(fmt.Errorf("failed to load public key: %s", err))
 	}
 
 	// Decode the public key into a "block"
 	publicBlock, _ := pem.Decode(publicKeyBytes)
 	if publicBlock == nil || publicBlock.Type != "PUBLIC KEY" {
-		fmt.Println(fmt.Errorf("failed to decode PEM block containing public key"))
+		log.Debug(fmt.Errorf("failed to decode PEM block containing public key"))
 	}
 
 	// Parse the public key
 	publicKey, err := x509.ParsePKIXPublicKey(publicBlock.Bytes)
 	if err != nil {
-		fmt.Println(fmt.Errorf("parse cert: %s", err))
+		log.Debug(fmt.Errorf("parse cert: %s", err))
 	}
 
 	// Check the type of the key
 	if _, ok := publicKey.(*rsa.PublicKey); !ok {
-		fmt.Println(fmt.Errorf("invalid key type: %s", reflect.TypeOf(publicKey)))
+		log.Debug(fmt.Errorf("invalid key type: %s", reflect.TypeOf(publicKey)))
 	}
 
 	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), crypto.SHA384, data[:], rawsignaturePSS, &VerifyOptions)
 	if err != nil {
-		fmt.Println(fmt.Errorf("invalid signature: %s", err))
+		log.Debug(fmt.Errorf("invalid signature: %s", err))
 	} else {
-		fmt.Printf("Signature valid!\n")
+		log.Debug("Signature valid!\n")
 	}
 	check(err)
 
-	fmt.Println("verify with JWT PSS ")
+	log.Debug("verify with JWT PSS ")
 	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), crypto.SHA384, data[:], rawsignature, &VerifyOptions)
 	if err != nil {
-		fmt.Println(fmt.Errorf("invalid signature: %s", err))
+		log.Debug(fmt.Errorf("invalid signature: %s", err))
 	} else {
-		fmt.Printf("Signature valid!\n")
+		log.Debug("Signature valid!\n")
 	}
 	check(err)
 
@@ -284,7 +288,7 @@ func (p *PIVPlugin) GenerateSignature(_ context.Context, req *plugin.GenerateSig
 		Signature:        rawsignature,
 		SigningAlgorithm: plugin.SignatureAlgorithmRSASSA_PSS_SHA384,
 		CertificateChain: toRawCerts(certs),
-	}, nil
+	}, err
 }
 
 func (p *PIVPlugin) GenerateEnvelope(_ context.Context, _ *plugin.GenerateEnvelopeRequest) (*plugin.GenerateEnvelopeResponse, error) {
