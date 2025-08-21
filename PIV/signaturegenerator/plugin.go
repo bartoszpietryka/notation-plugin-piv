@@ -39,9 +39,9 @@ func NewPIVPlugin() (*PIVPlugin, error) {
 	return &PIVPlugin{}, nil
 }
 
-//toDo add support for other key formats
+
 func (p *PIVPlugin) DescribeKey(_ context.Context, req *plugin.DescribeKeyRequest) (*plugin.DescribeKeyResponse, error) {
-//toDO
+//toDo add support for other key formats
 	return &plugin.DescribeKeyResponse{
 		KeyID:   req.KeyID,
 		KeySpec: plugin.KeySpecRSA2048,
@@ -84,7 +84,9 @@ func GetPublicCertFromPIVDevice(pivDevice *piv.YubiKey) (*x509.Certificate, erro
 	return cert, nil
 }
 
-func GetKeyAndCertFromPIVDevice(ctx context.Context) (crypto.PrivateKey,  []*x509.Certificate , error) {
+
+
+func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.PrivateKey,  []*x509.Certificate , error) {
 	log := logger.GetLogger(ctx)
 	log.Debug("Try to get first PIV device name")
 	pivDeviceName, err := GetPIVDeviceName()
@@ -115,8 +117,11 @@ func GetKeyAndCertFromPIVDevice(ctx context.Context) (crypto.PrivateKey,  []*x50
 	if !isRSAKey {
 		plugin.NewGenericError("Public key is not an rsa key. Only RSA keys are supported by this plugin")
 	}
-	//ToDo
-	auth := piv.KeyAuth{PIN: "234567"}
+	
+	auth := piv.KeyAuth{PIN : pin}
+	if pin == "" {
+		return nil, nil, plugin.NewAccessDeniedError("Empty PIN")
+	}
 	log.Debug("Create signer from slot 9c")
 	privateKey, err := pivDevice.PrivateKey(piv.SlotSignature, publicCertificate.PublicKey, auth)
 	if err != nil {
@@ -136,7 +141,7 @@ func GetKeyAndCertFromFile(ctx context.Context, privateKeyPath string, publicCer
 	log := logger.GetLogger(ctx)
 	log.Debugf("Try to read Private Key file %s", privateKeyPath)
 	//toDo handle multiple certs in one file
-	privateCertificate, err := x509core.ReadCertificateFile(privateKeyPath)
+	privateKey, err := x509core.ReadPrivateKeyFile(privateKeyPath)
 	if err != nil {
 		return nil, nil, plugin.NewGenericErrorf("Unable to get Private Key from file. %s %s  ", privateKeyPath, err.Error())
 	}
@@ -156,7 +161,19 @@ func GetKeyAndCertFromFile(ctx context.Context, privateKeyPath string, publicCer
 		return nil, nil, plugin.NewGenericErrorf("Multiple certifcates in file not supported yet. %s", publicCertifcatePath)
 	}
 
-	return privateCertificate, publicCertificates, nil
+	return privateKey, publicCertificates, nil
+}
+
+
+func UseFiles(parameters map[string]string )(bool, string, string ){
+	if len(parameters) <2 {
+		return false, "", ""
+	} 
+	if parameters["key_path"] == "" || parameters["cert_path"] == ""{
+		return false, "", ""
+	} 
+	
+	return true, parameters["key_path"], parameters["cert_path"]
 }
 
 func SignWithRSAPSS(ctx context.Context, privateKeyInterface crypto.PrivateKey, digest []byte) ([]byte, error) {
@@ -179,17 +196,17 @@ func SignWithRSAPSS(ctx context.Context, privateKeyInterface crypto.PrivateKey, 
 
 func (p *PIVPlugin) GenerateSignature(ctx context.Context, req *plugin.GenerateSignatureRequest) (*plugin.GenerateSignatureResponse, error) {
 	log := logger.GetLogger(ctx)
-	useFile := false
+	
 	var err error
 	var privateKeyInterface crypto.PrivateKey
 	var publicCertificates []*x509.Certificate
 
-	if useFile {
-		//toDo do not hardcode paths
-		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromFile(ctx, "./test/example_certs/code_signing.key", "./test/example_certs/code_signing.crt")
+	usefile, keyPath, certPath := UseFiles(req.PluginConfig)
+	if usefile {
+		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromFile(ctx, keyPath, certPath)
 		log.Debug("Private Key from file ready to use")
 	} else {
-		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromPIVDevice(ctx)
+		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromPIVDevice(ctx, req.PluginConfig["PIN"] )
 		log.Debug("PIV device ready to use")
 	}
 	if err != nil {
