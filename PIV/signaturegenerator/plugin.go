@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 
 	"github.com/bartoszpietryka/notation-plugin-piv/internal/logger"
+	"github.com/bartoszpietryka/notation-plugin-piv/internal/version"
 	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 	"github.com/go-piv/piv-go/v2/piv"
 	x509core "github.com/notaryproject/notation-core-go/x509"
@@ -30,7 +31,7 @@ import (
 )
 
 const Name = "pl.bpietryka.piv.notation.plugin"
-const Version = "1.0.0"
+
 
 type PIVPlugin struct {
 }
@@ -241,7 +242,7 @@ func (p *PIVPlugin) GetMetadata(_ context.Context, _ *plugin.GetMetadataRequest)
 		Name:                      Name,
 		Description:               "PIV Plugin for Notation",
 		URL:                       "https://github.com/bartoszpietryka/notation-plugin-piv",
-		Version:                   Version,
+		Version:                   version.GetVersion(),
 		Capabilities: []plugin.Capability{
 			plugin.CapabilitySignatureGenerator},
 	}, nil
