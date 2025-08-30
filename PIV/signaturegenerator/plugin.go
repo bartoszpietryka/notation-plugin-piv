@@ -32,14 +32,12 @@ import (
 
 const Name = "pl.bpietryka.piv.notation.plugin"
 
-
 type PIVPlugin struct {
 }
 
 func NewPIVPlugin() (*PIVPlugin, error) {
 	return &PIVPlugin{}, nil
 }
-
 
 func (p *PIVPlugin) DescribeKey(_ context.Context, req *plugin.DescribeKeyRequest) (*plugin.DescribeKeyResponse, error) {
 //toDo add support for other key formats
@@ -48,7 +46,6 @@ func (p *PIVPlugin) DescribeKey(_ context.Context, req *plugin.DescribeKeyReques
 		KeySpec: plugin.KeySpecRSA2048,
 	}, nil
 }
-
 
 func toRawCerts(certs []*x509.Certificate) [][]byte {
 	var rawCerts [][]byte
@@ -84,8 +81,6 @@ func GetPublicCertFromPIVDevice(pivDevice *piv.YubiKey) (*x509.Certificate, erro
 	}
 	return cert, nil
 }
-
-
 
 func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.PrivateKey,  []*x509.Certificate , error) {
 	log := logger.GetLogger(ctx)
@@ -141,30 +136,24 @@ func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.Private
 func GetKeyAndCertFromFile(ctx context.Context, privateKeyPath string, publicCertifcatePath string ) (crypto.PrivateKey, []*x509.Certificate, error) {
 	log := logger.GetLogger(ctx)
 	log.Debugf("Try to read Private Key file %s", privateKeyPath)
-	//toDo handle multiple certs in one file
 	privateKey, err := x509core.ReadPrivateKeyFile(privateKeyPath)
 	if err != nil {
 		return nil, nil, plugin.NewGenericErrorf("Unable to get Private Key from file. %s %s  ", privateKeyPath, err.Error())
 	}
 	log.Debug("Private Key file open")
 
-	log.Debugf("Try to read Public Certifcate file %s", publicCertifcatePath)
+	log.Debugf("Try to read Public Certifcates file %s", publicCertifcatePath)
 	publicCertificates, err := x509core.ReadCertificateFile(publicCertifcatePath)
 	if err != nil {
 		return nil, nil, plugin.NewGenericErrorf("Unable to get Public Certifcate from file. %s %s  ", publicCertifcatePath, err.Error())
 	}
-	log.Debug("Public Certifcate file open")
+	log.Debug("Public Certifcates file open")
 	if len(publicCertificates) == 0 {
 		return nil, nil, plugin.NewGenericErrorf("No certifcates found in file. %s", publicCertifcatePath)
-	}
-	//toDo handle certifcate chain
-	if len(publicCertificates) > 1 {
-		return nil, nil, plugin.NewGenericErrorf("Multiple certifcates in file not supported yet. %s", publicCertifcatePath)
 	}
 
 	return privateKey, publicCertificates, nil
 }
-
 
 func UseFiles(parameters map[string]string )(bool, string, string ){
 	if len(parameters) <2 {
@@ -218,7 +207,6 @@ func (p *PIVPlugin) GenerateSignature(ctx context.Context, req *plugin.GenerateS
 	if err != nil {
 		return nil, err
 	}
-
 
 	return &plugin.GenerateSignatureResponse{
 		KeyID:            req.KeyID,

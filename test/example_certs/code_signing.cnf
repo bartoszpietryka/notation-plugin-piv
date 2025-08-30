@@ -1,0 +1,31 @@
+# Code-signing certificate request
+#For simple self-signed
+#openssl req -config code_signing.cnf -newkey rsa:2048 -x509 -out RootCA.crt -keyout RootCA.key -days 7305
+#For Root of chain testing, follow instructions from RootCA.cnf and IntermidiateCA.cnf first. And then
+#openssl req -config code_signing.cnf -newkey rsa:2048 -x509  -CAkey IntermidiateCA.key -CA IntermidiateCA.crt  -extensions codesign_reqext  -days 7305 -out code_signing_leaf.crt -keyout code_signing_chain.key 
+#Merge files into one
+#Linux cat code_signing_leaf.crt IntermidiateCA.crt RootCA.crt > code_signing_chain.crt 
+#PowerShell cat code_signing_leaf.crt , IntermidiateCA.crt , RootCA.crt > code_signing_chain.crt 
+
+[ req ]
+default_bits            = 2048                  # RSA key size
+encrypt_key             = no                   # Protect private key
+default_md              = sha256                # MD to use
+utf8                    = yes                   # Input is UTF-8
+string_mask             = utf8only              # Emit UTF-8 strings
+prompt                  = no                   # Prompt for DN
+distinguished_name      = codesign_dn           # DN template
+req_extensions          = codesign_reqext       # Desired extensions
+
+[ codesign_dn ]
+countryName             = "US"
+stateOrProvinceName     = "WA"
+organizationName        = "Notary"
+commonName              = "piv-example"
+
+
+[ codesign_reqext ]
+keyUsage                = critical,digitalSignature
+extendedKeyUsage        = critical,codeSigning
+basicConstraints = critical, CA:false
+subjectKeyIdentifier    = hash

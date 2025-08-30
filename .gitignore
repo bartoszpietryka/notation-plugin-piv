@@ -18,5 +18,8 @@
 bin/
 vendor/
 test/e2e/bin/
-test/example_certs/
 coverage.txt
+
+#test Certs
+*.key
+*.crt

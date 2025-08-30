@@ -1,0 +1,42 @@
+# OpenSSL conf for code-signing CA 
+#openssl req -config RootCA.cnf -newkey rsa:2048 -x509 -out RootCA.crt -keyout RootCA.key -days 7305
+
+[ ca ]
+default_ca = CA_LOC
+
+[ CA_LOC ]
+prompt            = no
+default_crl_days  = 30
+preserve          = no
+policy            = policy
+default_days      = 7305   # 20 years
+
+[ policy ]
+commonName              = supplied
+stateOrProvinceName     = supplied
+countryName             = supplied
+emailAddress            = supplied
+organizationName        = supplied
+organizationalUnitName  = supplied
+
+[ req ]
+default_bits            = 2048                  # RSA key size
+distinguished_name  	= req_distinguished_name #Use DN defined in req_distinguished_name
+encrypt_key             = no                   # Protect private key
+default_md              = sha256                # MD to use
+utf8                    = yes                   # Input is UTF-8
+string_mask             = utf8only              # Emit UTF-8 strings
+prompt                  = no                   # Prompt for DN
+x509_extensions         = v3_ca                 # Desired extensions
+
+[ req_distinguished_name ]
+countryName             = "US"
+stateOrProvinceName     = "WA"
+organizationName        = "Notary"
+commonName              = "piv-example-Root-CA"
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature,keyCertSign
