@@ -47,6 +47,26 @@ func (p *PIVPlugin) DescribeKey(_ context.Context, req *plugin.DescribeKeyReques
 	}, nil
 }
 
+func (p *PIVPlugin) GenerateEnvelope(_ context.Context, _ *plugin.GenerateEnvelopeRequest) (*plugin.GenerateEnvelopeResponse, error) {
+	return nil, plugin.NewUnsupportedError("GenerateEnvelope operation is not implemented by " + Name + " plugin")
+}
+
+func (p *PIVPlugin) VerifySignature(_ context.Context, req *plugin.VerifySignatureRequest) (*plugin.VerifySignatureResponse, error) {
+	return nil, plugin.NewUnsupportedError("VerifySignature operation is not implemented by " + Name + " plugin")
+}
+
+func (p *PIVPlugin) GetMetadata(_ context.Context, _ *plugin.GetMetadataRequest) (*plugin.GetMetadataResponse, error) {
+	return &plugin.GetMetadataResponse{
+		SupportedContractVersions: []string{plugin.ContractVersion},
+		Name:                      Name,
+		Description:               "PIV Plugin for Notation",
+		URL:                       "https://github.com/bartoszpietryka/notation-plugin-piv",
+		Version:                   version.GetVersion(),
+		Capabilities: []plugin.Capability{
+			plugin.CapabilitySignatureGenerator},
+	}, nil
+}
+
 func toRawCerts(certs []*x509.Certificate) [][]byte {
 	var rawCerts [][]byte
 	for _, cert := range certs {
@@ -232,36 +252,14 @@ func (p *PIVPlugin) GenerateSignature(ctx context.Context, req *plugin.GenerateS
 	if err != nil {
 		return nil, err
 	}
-
 	rawsignature, err := SignWithRSAPSS(ctx, privateKeyInterface, req.Payload)
 	if err != nil {
 		return nil, err
 	}
-
 	return &plugin.GenerateSignatureResponse{
 		KeyID:            req.KeyID,
 		Signature:        rawsignature,
 		SigningAlgorithm: plugin.SignatureAlgorithmRSASSA_PSS_SHA256,
 		CertificateChain: toRawCerts(publicCertificates),
 	}, err
-}
-
-func (p *PIVPlugin) GenerateEnvelope(_ context.Context, _ *plugin.GenerateEnvelopeRequest) (*plugin.GenerateEnvelopeResponse, error) {
-	return nil, plugin.NewUnsupportedError("GenerateEnvelope operation is not implemented by " + Name + " plugin")
-}
-
-func (p *PIVPlugin) VerifySignature(_ context.Context, req *plugin.VerifySignatureRequest) (*plugin.VerifySignatureResponse, error) {
-	return nil, plugin.NewUnsupportedError("VerifySignature operation is not implemented by " + Name + " plugin")
-}
-
-func (p *PIVPlugin) GetMetadata(_ context.Context, _ *plugin.GetMetadataRequest) (*plugin.GetMetadataResponse, error) {
-	return &plugin.GetMetadataResponse{
-		SupportedContractVersions: []string{plugin.ContractVersion},
-		Name:                      Name,
-		Description:               "PIV Plugin for Notation",
-		URL:                       "https://github.com/bartoszpietryka/notation-plugin-piv",
-		Version:                   version.GetVersion(),
-		Capabilities: []plugin.Capability{
-			plugin.CapabilitySignatureGenerator},
-	}, nil
 }
