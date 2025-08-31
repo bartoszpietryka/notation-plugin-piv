@@ -27,7 +27,6 @@ import (
 	"github.com/bartoszpietryka/notation-plugin-piv/plugin"
 	"github.com/go-piv/piv-go/v2/piv"
 	x509core "github.com/notaryproject/notation-core-go/x509"
-
 )
 
 const Name = "pl.bpietryka.piv.notation.plugin"
@@ -40,7 +39,7 @@ func NewPIVPlugin() (*PIVPlugin, error) {
 }
 
 func (p *PIVPlugin) DescribeKey(_ context.Context, req *plugin.DescribeKeyRequest) (*plugin.DescribeKeyResponse, error) {
-//toDo add support for other key formats
+	//toDo add support for other key formats
 	return &plugin.DescribeKeyResponse{
 		KeyID:   req.KeyID,
 		KeySpec: plugin.KeySpecRSA2048,
@@ -82,7 +81,7 @@ func GetPublicCertFromPIVDevice(pivDevice *piv.YubiKey) (*x509.Certificate, erro
 	return cert, nil
 }
 
-func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.PrivateKey,  []*x509.Certificate , error) {
+func GetKeyAndLeafCertFromPIVDevice(ctx context.Context, pin string) (crypto.PrivateKey, *x509.Certificate, error) {
 	log := logger.GetLogger(ctx)
 	log.Debug("Try to get first PIV device name")
 	pivDeviceName, err := GetPIVDeviceName()
@@ -98,23 +97,20 @@ func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.Private
 	}
 	log.Debug("Sucessfuly open PIV device")
 
-	//toDo handle certificate chain
 	log.Debug("Extract public certificate from slot 9c")
 	publicCertificate, err := GetPublicCertFromPIVDevice(pivDevice)
 	if err != nil {
-		return nil, nil,  err
+		return nil, nil, err
 	}
 	log.Debugf("Public cert Subject: %s  ", publicCertificate.Subject)
-	var publicCertificates []*x509.Certificate
-	publicCertificates = append(publicCertificates, publicCertificate)
 
 	pubKey := publicCertificate.PublicKey
 	_, isRSAKey := pubKey.(*rsa.PublicKey)
 	if !isRSAKey {
 		plugin.NewGenericError("Public key is not an rsa key. Only RSA keys are supported by this plugin")
 	}
-	
-	auth := piv.KeyAuth{PIN : pin}
+
+	auth := piv.KeyAuth{PIN: pin}
 	if pin == "" {
 		return nil, nil, plugin.NewAccessDeniedError("Empty PIN")
 	}
@@ -130,40 +126,74 @@ func GetKeyAndCertFromPIVDevice(ctx context.Context, pin string) (crypto.Private
 	}
 
 	log.Debug("Good signer from slot 9c")
-	return privateKey, publicCertificates , nil
+	return privateKey, publicCertificate, nil
 }
 
-func GetKeyAndCertFromFile(ctx context.Context, privateKeyPath string, publicCertifcatePath string ) (crypto.PrivateKey, []*x509.Certificate, error) {
+func GetKeyAndCertChainFromPIVDevice(ctx context.Context, pin string, publicCertifcatePath string) (crypto.PrivateKey, []*x509.Certificate, error) {
+	log := logger.GetLogger(ctx)
+	var privateKeyInterface crypto.PrivateKey
+	var publicCertificates []*x509.Certificate
+
+	privateKeyInterface, certificateFromPIV, err := GetKeyAndLeafCertFromPIVDevice(ctx, pin)
+	if err != nil {
+		return nil, nil, err
+	}
+	log.Debug("PIV device ready to use")
+	if publicCertifcatePath == "" {
+		log.Debug("Parameter cert_path not specified. Using certificate extracted from PIV Device as certificate chain")
+		if certificateFromPIV == nil {
+			return nil, nil, plugin.NewAccessDeniedError("No Public certificate found")
+		}
+		publicCertificates = append(publicCertificates, certificateFromPIV)
+	} else {
+		log.Debug("Using certificate chain from pluginConfig cert_path ")
+		publicCertificates, err = GetCertChainFromFile(ctx, publicCertifcatePath)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !publicCertificates[0].Equal(certificateFromPIV) {
+			return nil, nil, plugin.NewAccessDeniedError("Leaf certificate in cert_path does not match certiffcate stored on PIV device")
+		}
+	}
+	return privateKeyInterface, publicCertificates, nil
+}
+
+func GetCertChainFromFile(ctx context.Context, publicCertifcatePath string) ([]*x509.Certificate, error) {
+	log := logger.GetLogger(ctx)
+	if publicCertifcatePath == "" {
+		return nil, plugin.NewGenericErrorf("pluginConfig cert_path not specified")
+	}
+	log.Debugf("Try to read Public Certifcates file %s", publicCertifcatePath)
+	publicCertificates, err := x509core.ReadCertificateFile(publicCertifcatePath)
+	if err != nil {
+		return nil, plugin.NewGenericErrorf("Unable to get Public Certifcate from file. %s %s  ", publicCertifcatePath, err.Error())
+	}
+	log.Debug("Public Certifcates file open")
+	if len(publicCertificates) == 0 {
+		return nil, plugin.NewGenericErrorf("No certifcates found in file. %s", publicCertifcatePath)
+	}
+	return publicCertificates, nil
+}
+
+func GetKeyAndCertChainFromFile(ctx context.Context, privateKeyPath string, publicCertifcatePath string) (crypto.PrivateKey, []*x509.Certificate, error) {
 	log := logger.GetLogger(ctx)
 	log.Debugf("Try to read Private Key file %s", privateKeyPath)
+	if privateKeyPath == "" {
+		return nil, nil, plugin.NewGenericErrorf("pluginConfig key_path not specified")
+	}
 	privateKey, err := x509core.ReadPrivateKeyFile(privateKeyPath)
 	if err != nil {
 		return nil, nil, plugin.NewGenericErrorf("Unable to get Private Key from file. %s %s  ", privateKeyPath, err.Error())
 	}
 	log.Debug("Private Key file open")
 
-	log.Debugf("Try to read Public Certifcates file %s", publicCertifcatePath)
-	publicCertificates, err := x509core.ReadCertificateFile(publicCertifcatePath)
+	var publicCertificates []*x509.Certificate
+	publicCertificates, err = GetCertChainFromFile(ctx, publicCertifcatePath)
 	if err != nil {
-		return nil, nil, plugin.NewGenericErrorf("Unable to get Public Certifcate from file. %s %s  ", publicCertifcatePath, err.Error())
-	}
-	log.Debug("Public Certifcates file open")
-	if len(publicCertificates) == 0 {
-		return nil, nil, plugin.NewGenericErrorf("No certifcates found in file. %s", publicCertifcatePath)
+		return nil, nil, err
 	}
 
 	return privateKey, publicCertificates, nil
-}
-
-func UseFiles(parameters map[string]string )(bool, string, string ){
-	if len(parameters) <2 {
-		return false, "", ""
-	} 
-	if parameters["key_path"] == "" || parameters["cert_path"] == ""{
-		return false, "", ""
-	} 
-	
-	return true, parameters["key_path"], parameters["cert_path"]
 }
 
 func SignWithRSAPSS(ctx context.Context, privateKeyInterface crypto.PrivateKey, digest []byte) ([]byte, error) {
@@ -186,18 +216,17 @@ func SignWithRSAPSS(ctx context.Context, privateKeyInterface crypto.PrivateKey, 
 
 func (p *PIVPlugin) GenerateSignature(ctx context.Context, req *plugin.GenerateSignatureRequest) (*plugin.GenerateSignatureResponse, error) {
 	log := logger.GetLogger(ctx)
-	
+
 	var err error
 	var privateKeyInterface crypto.PrivateKey
 	var publicCertificates []*x509.Certificate
 
-	usefile, keyPath, certPath := UseFiles(req.PluginConfig)
-	if usefile {
-		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromFile(ctx, keyPath, certPath)
-		log.Debug("Private Key from file ready to use")
-	} else {
-		privateKeyInterface, publicCertificates, err = GetKeyAndCertFromPIVDevice(ctx, req.PluginConfig["PIN"] )
+	if req.PluginConfig["key_path"] == "" {
+		privateKeyInterface, publicCertificates, err = GetKeyAndCertChainFromPIVDevice(ctx, req.PluginConfig["PIN"], req.PluginConfig["cert_path"])
 		log.Debug("PIV device ready to use")
+	} else {
+		privateKeyInterface, publicCertificates, err = GetKeyAndCertChainFromFile(ctx, req.PluginConfig["key_path"], req.PluginConfig["cert_path"])
+		log.Debug("Private Key from file ready to use")
 	}
 	if err != nil {
 		return nil, err

@@ -1,6 +1,6 @@
 # Code-signing certificate request
-#For simple self-signed
-#openssl req -config code_signing.cnf -newkey rsa:2048 -x509 -out RootCA.crt -keyout RootCA.key -days 7305
+#For simple self-signed code signing certificate use
+#openssl req -config code_signing.cnf -newkey rsa:2048 -x509 -out code_signing.crt  -keyout code_signing.key -days 7305
 #For Root of chain testing, follow instructions from RootCA.cnf and IntermidiateCA.cnf first. And then
 #openssl req -config code_signing.cnf -newkey rsa:2048 -x509  -CAkey IntermidiateCA.key -CA IntermidiateCA.crt  -extensions codesign_reqext  -days 7305 -out code_signing_leaf.crt -keyout code_signing_chain.key 
 #Merge files into one
@@ -15,7 +15,8 @@ utf8                    = yes                   # Input is UTF-8
 string_mask             = utf8only              # Emit UTF-8 strings
 prompt                  = no                   # Prompt for DN
 distinguished_name      = codesign_dn           # DN template
-req_extensions          = codesign_reqext       # Desired extensions
+req_extensions          = codesign_reqext       # Desired extensions for req
+x509_extensions         = codesign_reqext       # Desired extensions for x509
 
 [ codesign_dn ]
 countryName             = "US"
