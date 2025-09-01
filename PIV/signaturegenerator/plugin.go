@@ -159,7 +159,7 @@ func GetKeyAndCertChainFromPIVDevice(ctx context.Context, pin string, publicCert
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Debug("PIV device ready to use")
+	log.Debug("PIV device returned cert and Signer interface")
 	if publicCertifcatePath == "" {
 		log.Debug("Parameter cert_path not specified. Using certificate extracted from PIV Device as certificate chain")
 		if certificateFromPIV == nil {
@@ -173,7 +173,7 @@ func GetKeyAndCertChainFromPIVDevice(ctx context.Context, pin string, publicCert
 			return nil, nil, err
 		}
 		if !publicCertificates[0].Equal(certificateFromPIV) {
-			return nil, nil, plugin.NewAccessDeniedError("Leaf certificate in cert_path does not match certiffcate stored on PIV device")
+			return nil, nil, plugin.NewAccessDeniedError("Leaf certificate in cert_path does not match certificate stored on PIV device")
 		}
 	}
 	return privateKeyInterface, publicCertificates, nil
