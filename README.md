@@ -84,6 +84,11 @@ If you are not using Root CA, you should use code_signing.crt, the same file tha
 
 Please note that ratify expect certificate to be valid for at least 60 more days, otherwise it will throw error.
 
+Please beware that in most instructions and tutorials for Ratify, they are using Gatekeeper constraint https://notaryproject.github.io/ratify/library/default/samples/constraint.yaml . This constraint verifies only signatures for pods created in "default" namespace. 
+
+This is not sufficient for production environments . You can instead use constraint https://bartoszpietryka.github.io/notation-plugin-piv.github.io/ratify/library/samples/constraint.yaml . It requires verification of images signatures in all namespaces with exception of kube-system,gatekeeper-system .
+
+
 ## Code of Conduct
 
 This project has adopted the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for further details.
