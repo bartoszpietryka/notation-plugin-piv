@@ -11,22 +11,31 @@ This project uses [Notation plugin framework](https://github.com/notaryproject/n
 On Windows necessary PIV driver should already by installed. It's is highly recommended to change default PIN before running this tool.
 
  Install plugin 
- ToDo command
-
+``` 
+notation.exe plugin install --url https://github.com/bartoszpietryka/notation-plugin-piv/releases/download/Release_1_0_0/notation-plugin-piv_1.0.0_windows_amd64.zip --sha256sum 73bd7aabc488d98b3d257837d4558dc54e523e5cafae0146e8c7b37bf4f549e8
+``` 
  **Linux**:
  To use on Linux, you'll need to install libraries for your PIV device first.
 
  On Debian based systems, Yubico PIV tool library can be installed with command:
-  ```   
- sudo apt install libykpiv2 
-  ```
+```   
+sudo apt install libykpiv2 
+```
  Install plugin 
- ToDo command
+AMD64:
+```
+notation plugin install --url https://github.com/bartoszpietryka/notation-plugin-piv/releases/download/Release_1_0_0/notation-plugin-piv_1.0.0_linux_amd64.tar.gz --sha256sum b7c0866f89970dd70683f78555804c869333710894c5e88edf2592b458e76342
+```
+ARM64:
+```
+notation plugin install --url https://github.com/bartoszpietryka/notation-plugin-piv/releases/download/Release_1_0_0/notation-plugin-piv_1.0.0_linux_arm64.tar.gz --sha256sum a021eb5b20ce749b80fb517502e989502e8fcfe2505d86150b1872db5fa60a97
+
+```
 
  To build on Linux you will additionally need to install libpcsclite-dev package
-   ```
- sudo apt install libpcsclite-dev
-   ```
+```
+sudo apt install libpcsclite-dev
+```
 
 ## Keys and Certificates
 Currently notation-plugin-piv supports only RSA 2048 Keys
@@ -42,22 +51,22 @@ Notation uses authentication token from ~/.docker/config.json . Login to reposit
 
 To sign container with self-signed certificate use
 ```   
-notation sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
+notation.exe sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
 ```   
 
-Self-signed code signing certificates are useful for testing environments. But for production environment, it is considered good practise to use Certificate Authority. 
+Self-signed code signing certificates are useful for testing environments. But for production environment, it is considered good practice to use Certificate Authority. 
 In typical scenarios it's better to use Private than Public Certificate Authority. In other words use self-signed Root CA. 
 
 PIV devices allow only one certificate in "Digital Signature" slot (9c). Unfortunately entire certificate chain cannot be imported into this slot. 
 To circumnavigate this limitation, it's necessary to provide notation-plugin-piv with file that contains entire chain: Root CA, all Intermediate certificates and Leaf Certificate .
 
 ```   
-notation sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" --plugin-config cert_path=test/example_certs/code_signing_chain.crt 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
+notation.exe sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" --plugin-config cert_path=test/example_certs/code_signing_chain.crt 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
 ```  
 
 If you are using certificate chain, leaf code signing certificate must be imported into 9c slot. And Root CA (i.e. test/example_certs/RootCA.crt) certificate added to trust store, for verification 
 ```  
-.\notation.exe cert add --type ca --store piv-example test/example_certs/RootCA.crt 
+notation.exe cert add --type ca --store piv-example test/example_certs/RootCA.crt 
 ```  
 
 ## Ratify
