@@ -1,9 +1,79 @@
 # notation-plugin-piv
-WORK IN PROGRESS 
-Do not use yet
+[Notation](https://github.com/notaryproject/notation) [plugin](https://github.com/notaryproject/specifications/blob/main/specs/plugin-extensibility.md) that allows to sign artifacts with [PIV](https://docs.yubico.com/yesdk/users-manual/application-piv/piv-overview.html) compatible HSM devices. Like YubiKey or SmartCard.  
 
-[Notation](https://github.com/notaryproject/notation) [plugin](https://github.com/notaryproject/specifications/blob/main/specs/plugin-extensibility.md) that allows to sign artifacts with [PIV](https://docs.yubico.com/yesdk/users-manual/application-piv/piv-overview.html) compatible HSM devices. Like Yubikey or SmartCard  
+This project uses [Notation plugin framework](https://github.com/notaryproject/notation-plugin-framework-go) as an foundation. And uses [piv-go](https://github.com/go-piv/piv-go) to interface with PIV devices
 
+## Installation 
+
+[Install notation](https://notaryproject.dev/docs/user-guides/installation/cli/)
+
+ **Windows**:
+On Windows necessary PIV driver should already by installed. It's is highly recommended to change default PIN before running this tool.
+
+ Install plugin 
+ ToDo command
+
+ **Linux**:
+ To use on Linux, you'll need to install libraries for your PIV device first.
+
+ On Debian based systems, Yubico PIV tool library can be installed with command:
+  ```   
+ sudo apt install libykpiv2 
+  ```
+ Install plugin 
+ ToDo command
+
+ To build on Linux you will additionally need to install libpcsclite-dev package
+   ```
+ sudo apt install libpcsclite-dev
+   ```
+
+## Keys and Certificates
+Currently notation-plugin-piv supports only RSA 2048 Keys
+
+Notation has strict [requirments](https://github.com/notaryproject/specifications/blob/main/specs/signature-specification.md#certificate-requirements) for signing certificate and certificate chain. 
+To generate proper certificates you can use openssl configuration examples from directory [test/example_certs](https://github.com/bartoszpietryka/notation-plugin-piv/tree/main/test/example_certs)
+
+You will need to import code signing certificate and matching key into slot 9c on PIV device.
+
+## Usage
+
+Notation uses authentication token from ~/.docker/config.json . Login to repository with docker or [oras](https://oras.land/docs/installation) before signing
+
+To sign container with self-signed certificate use
+```   
+notation sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
+```   
+
+Self-signed code signing certificates are useful for testing environments. But for production environment, it is considered good practise to use Certificate Authority. 
+In typical scenarios it's better to use Private than Public Certificate Authority. In other words use self-signed Root CA. 
+
+PIV devices allow only one certificate in "Digital Signature" slot (9c). Unfortunately entire certificate chain cannot be imported into this slot. 
+To circumnavigate this limitation, it's necessary to provide notation-plugin-piv with file that contains entire chain: Root CA, all Intermediate certificates and Leaf Certificate .
+
+```   
+notation sign --plugin pl.bpietryka.piv.notation.plugin --id 1 --plugin-config PIN="234567" --plugin-config cert_path=test/example_certs/code_signing_chain.crt 123456.dkr.ecr.eu-west-1.amazonaws.com/signing@sha256:026b948169ecedce2dd53c005720dcc4fc8463d641d9aea32e9d3de5d2b8985a
+```  
+
+If you are using certificate chain, leaf code signing certificate must be imported into 9c slot. And Root CA (i.e. test/example_certs/RootCA.crt) certificate added to trust store, for verification 
+```  
+.\notation.exe cert add --type ca --store piv-example test/example_certs/RootCA.crt 
+```  
+
+## Ratify
+
+When [deploying ratify](https://ratify.dev/docs/1.0/quickstarts/ratify-on-aws/#deploy-ratify), use  Root CA in --set-file parameter. i.e.
+```  
+notation cert list
+
+helm install ratify ratify/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notationCert={./test/example_certs/RootCA.crt}
+```  
+
+If you are not using Root CA, you should use code_signing.crt, the same file that was imported into PIV device.
+
+Please note that ratify expect certificate to be valid for at least 60 more days, otherwise it will throw error.
 
 ## Code of Conduct
 
